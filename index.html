@@ -12,7 +12,7 @@
 <style>
 	path {
 		stroke:white;
-		stroke-width: 1px;
+		stroke-width: 0.5px;
 	}
 
 	body {
@@ -39,7 +39,7 @@
 		position: absolute;
 		left: 75px;
 		text-align: center;
-		height: 16px;
+		height: 65px;
 		padding: 10px;
 		font-size: 14px;
 		background: #FFFFFF;
@@ -49,21 +49,69 @@
 
 	p {
 		font-family: 'Proxima Nova', sans-serif;
-		font-size:10px;
+		font-size: 15px;
 		margin: 20px 0 0 10px;
 	}
 
 	@media (max-width: 400px) {
-    .d3map {
-        display: none;
-    }
-}
+		.d3map {
+			display: none;
+		}
+	}
+	.slidecontainer {
+		width: 100%;
+		margin-bottom: 20px;
+
+	}
+
+	.slider {
+		-webkit-appearance: none;
+		width: 100%;
+		height: 15px;
+		border-radius: 5px;
+		background: #d3d3d3;
+		outline: none;
+		opacity: 0.7;
+		-webkit-transition: .2s;
+		transition: opacity .2s;
+		margin-top: 10px;
+	}
+
+	.slider:hover {
+		opacity: 1;
+	}
+
+	.slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 25px;
+		height: 25px;
+		border-radius: 50%;
+		background: #04AA6D;
+		cursor: pointer;
+	}
+
+	.slider::-moz-range-thumb {
+		width: 25px;
+		height: 25px;
+		border-radius: 50%;
+		background: #04AA6D;
+		cursor: pointer;
+	}
+
 </style>
 
 <body>
 	<h1>U.S. Wage Choropleth</h1>
-		<script type="text/javascript">
-
+	<div class="slidecontainer" style="width: 960px;">
+		<p style="font-weight: bold; text-align: center;">Year: <span id="yearValue"></span></p>
+		<input type="range" min="2000" max="2022" value="2020" class="slider" id="yearSelect"></select>
+		<p style="font-weight: bold; text-align: center;">Quarter: <span id="quarterValue"></span></p>
+		<input type="range" min="1" max="4" value="1" class="slider" id="quarterSelect"></select>
+	</div>
+	<div id="choropleth"></div>
+	<script type="text/javascript">
+		
 		var width = 960, height = 600;
 		var color_domain = [400, 800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800]
 		var ext_color_domain = [0, 400, 800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800]
@@ -72,11 +120,11 @@
 			.domain(color_domain)
 			.range(["#dcdcdc", "#d0d6cd", "#bdc9be", "#aabdaf", "#97b0a0", "#84a491", "#719782", "#5e8b73", "#4b7e64", "#387255", "#256546", "#125937", "#004d28"]);
 		
-		var div = d3.select("body").append("div")
+		var div = d3.select("#choropleth").append("div")
 			.attr("class", "tooltip")
 			.style("opacity", 0);
 		
-		var svg = d3.select("body").append("svg")
+		var svg = d3.select("#choropleth").append("svg")
 			.attr("width", width)
 			.attr("height", height)
 			.style("margin", "-15px auto");
@@ -84,70 +132,131 @@
 			
 		queue()
 			.defer(d3.json, "us.json")
-			.defer(d3.csv, "out.csv")
+			// .defer(d3.csv, "2000.csv")
+			// .defer(d3.csv, "2001.csv")
+			// .defer(d3.csv, "2002.csv")
+			// .defer(d3.csv, "2003.csv")
+			// .defer(d3.csv, "2004.csv")
+			// .defer(d3.csv, "2005.csv")
+			// .defer(d3.csv, "2006.csv")
+			// .defer(d3.csv, "2007.csv")
+			// .defer(d3.csv, "2008.csv")
+			// .defer(d3.csv, "2009.csv")
+			// .defer(d3.csv, "2010.csv")
+			// .defer(d3.csv, "2011.csv")
+			// .defer(d3.csv, "2012.csv")
+			// .defer(d3.csv, "2013.csv")
+			// .defer(d3.csv, "2014.csv")
+			// .defer(d3.csv, "2015.csv")
+			// .defer(d3.csv, "2016.csv")
+			// .defer(d3.csv, "2017.csv")
+			// .defer(d3.csv, "2018.csv")
+			// .defer(d3.csv, "2019.csv")
+			.defer(d3.csv, "2020.csv")
+			// .defer(d3.csv, "2021.csv")
 			.await(ready);
-			
-		function ready(error, us, data) {
-			var pairRateWithId = {};
-			var pairNameWithId = {};
+		var pairQuarterlyWithId = {};
+		var pairWeeklyWithId = {};
+		var pairEmploymentWithId = {};
+		var pairNameWithId = {};
+		var arr = Array(2022).fill(null).map(() => Array(5))
+		function ready(error, us, data) {	
+			var currentYear = 2020
+			var currentQuarter = 1
+			var slider = document.getElementById("yearSelect");
+			var output = document.getElementById("yearValue");
+			output.innerHTML = slider.value;
+
+			slider.oninput = function() {
+				output.innerHTML = this.value;
+				currentYear = this.value;
+			}
+			var qslider = document.getElementById("quarterSelect");
+			var qoutput = document.getElementById("quarterValue");
+			qoutput.innerHTML = qslider.value;
+
+			qslider.oninput = function() {
+				qoutput.innerHTML = this.value;
+				currentQuarter = this.value;
+			}		
+//id, Year, Qtr, Ownership, Industry, Total Quarterly Wages, Average Weekly Wage, Mean Quarterly Employment
 
 		//Moves selction to front
-		d3.selection.prototype.moveToFront = function() {
-			return this.each(function(){
-				this.parentNode.appendChild(this);
-			});
-		}; 
+			d3.selection.prototype.moveToFront = function() {
+				return this.each(function(){
+					this.parentNode.appendChild(this);
+				});
+			}; 
 
-		//Moves selction to back
-		d3.selection.prototype.moveToBack = function() { 
-			return this.each(function() { 
-				var firstChild = this.parentNode.firstChild; 
-				if (firstChild) { 
-					this.parentNode.insertBefore(this, firstChild); 
-				}
-			}); 
-		};
-
-		data.forEach(function(d) {
-			d.id = parseInt(d.id)
-			if (d.id == 6001) {
-				console.log(d)
-			}
-			pairRateWithId[d.id] = +parseFloat(d['Average Weekly Wage']).toFixed(2);
-			pairNameWithId[d.id] = d.Area.split(',')[0];
-		});
-		console.log(data)
-		svg.append("g")
-			.attr("class", "county")
-			.selectAll("path")
-			.data(topojson.feature(us, us.objects.counties).features)
-			.enter().append("path")
-			.attr("d", path)
-			.style ( "fill" , function (d) {
-				return color (pairRateWithId[d.id]);
-			})
-			.style("opacity", 0.8)
-			.on("mouseover", function(d) {
-				var sel = d3.select(this);
-				sel.moveToFront();
-				d3.select(this).transition().duration(300).style({'opacity': 1, 'stroke': 'black', 'stroke-width': 1.5});
-				div.transition().duration(300)
-					.style("opacity", 1)
-				div.text(pairNameWithId[d.id] + ": $" + pairRateWithId[d.id])
-					.style("left", (d3.event.pageX) + "px")
-					.style("top", (d3.event.pageY -30) + "px");
-			})
-			.on("mouseout", function() {
-				var sel = d3.select(this);
-				sel.moveToBack();
-				d3.select(this)
-					.transition().duration(300)
-					.style({'opacity': 0.8, 'stroke': 'white', 'stroke-width': 1});
-				div.transition().duration(300)
-					.style("opacity", 0);
-			})
-			
+			//Moves selction to back
+			d3.selection.prototype.moveToBack = function() { 
+				return this.each(function() { 
+					var firstChild = this.parentNode.firstChild; 
+					if (firstChild) { 
+						this.parentNode.insertBefore(this, firstChild); 
+					}
+				}); 
 			};
+
+			for (var i = 2020; i < 2023; i++) {
+				pairQuarterlyWithId[i] = {}
+				pairWeeklyWithId[i] = {}
+				pairEmploymentWithId[i] = {}
+
+				for (var j = 1; j < 5; j++){
+					pairQuarterlyWithId[i][j] = {}
+					pairWeeklyWithId[i][j] = {}
+					pairEmploymentWithId[i][j] = {}
+				}
+			}
+			data.forEach(function(d) {
+				d.id = parseInt(d.id)
+				d.Year = parseInt(d.Year)
+				d.Qtr = parseInt(d.Qtr)
+
+				if (!arr[d.Year][d.Qtr]) {
+					arr[d.Year][d.Qtr] = true
+				}
+				
+				if (d['Ownership'] == 'Total Covered') {
+					pairQuarterlyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Total Quarterly Wages']).toFixed(2);
+					pairWeeklyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Average Weekly Wage']).toFixed(2);
+					pairEmploymentWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Mean Quarterly Employment']).toFixed(2);
+					pairNameWithId[d.id] = d.Area.split(',')[0];
+				}
+			});
+
+			svg.append("g")
+				.attr("class", "county")
+				.selectAll("path")
+				.data(topojson.feature(us, us.objects.counties).features)
+				.enter().append("path")
+				.attr("d", path)
+				.style ( "fill" , function (d) {
+					return color (pairWeeklyWithId[currentYear][currentQuarter][d.id]);
+				})
+				.style("opacity", 0.8)
+				.on("mouseover", function(d) {
+					var sel = d3.select(this);
+					sel.moveToFront();
+					d3.select(this).transition().duration(300).style({'opacity': 1, 'stroke': 'black', 'stroke-width': 1.5});
+					div.transition().duration(300)
+						.style("opacity", 1)
+					div.html(pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: $" + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: $" + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>")
+						.style("left", (d3.event.pageX) + "px")
+						.style("top", (d3.event.pageY -30) + "px");
+				})
+				.on("mouseout", function() {
+					var sel = d3.select(this);
+					sel.moveToBack();
+					d3.select(this)
+						.transition().duration(300)
+						.style({'opacity': 0.8, 'stroke': 'white', 'stroke-width': 1});
+					div.transition().duration(300)
+						.style("opacity", 0);
+				})
+				
+		};
 			
 		var legend = svg.selectAll("g.legend")
 			.data(ext_color_domain)
