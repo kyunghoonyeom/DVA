@@ -165,7 +165,8 @@
 		var color_domain = [0, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
 		var ext_color_domain = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
 		// var legend_labels = ["< 200", "200+", "400+", "600+", "800+", "1000+", "1200+", "1400+", "1600+", "1800+", "2000+", "2200+", "2400+"]
-
+		var color_range = ["#dcdcdc", "#bdc9be", "#97b0a0", "#719782", "#4b7e64", "#256546", "#004d28"]
+		var forecast_color_range = ["#e1d1d6", "#d7bac2", "#cea3ad", "#c48c98", "#b97582", "#ad5e6c", "#a14756"]
 		var pairQuarterlyWithId = {};
 		var pairWeeklyWithId = {};
 		var pairEmploymentWithId = {};
@@ -175,7 +176,7 @@
 			.domain(color_domain)
 			// .range(["#dcdcdc", "#d0d6cd", "#bdc9be", "#aabdaf", "#97b0a0", 
 			// "#84a491", "#719782", "#5e8b73", "#4b7e64", "#387255", "#256546", "#125937", "#004d28"]);
-			.range(["#dcdcdc", "#bdc9be", "#97b0a0", "#719782", "#4b7e64", "#256546", "#004d28"]);
+			.range(color_range);
 
 		var div = d3.select("#choropleth").append("div")
 			.attr("class", "tooltip")
@@ -255,6 +256,7 @@
 			}).sort(function(a,b) { return a - b; })
 
 			color.domain(values)
+			color.range(color_range)
 			svg.append("g")
 				.attr("class", "county")
 				.selectAll("path")
@@ -262,7 +264,7 @@
 				.enter().append("path")
 				.attr("d", path)
 				.style ( "fill" , function (d) {
-					return color (pairWeeklyWithId[currentYear][currentQuarter][d.id]);
+					return color(pairWeeklyWithId[currentYear][currentQuarter][d.id]);
 				})
 				.style("opacity", 0.8)
 				.on("mouseover", function(d) {
@@ -271,7 +273,21 @@
 					d3.select(this).transition().duration(300).style({'opacity': 1, 'stroke': 'black', 'stroke-width': 1.5});
 					div.transition().duration(300)
 						.style("opacity", 1)
-					div.html(pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: $" + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: $" + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>")
+					div.html(function() {
+						if (pairNameWithId[d.id] === undefined) {
+							pairNameWithId[d.id] = "Not Available"
+						}
+						if (pairQuarterlyWithId[currentYear][currentQuarter][d.id] === undefined) {
+							pairQuarterlyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						}
+						if (pairWeeklyWithId[currentYear][currentQuarter][d.id] === undefined) {
+							pairWeeklyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						}
+						if (pairEmploymentWithId[currentYear][currentQuarter][d.id] === undefined) {
+							pairEmploymentWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						}
+						return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: " + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>"
+					})
 						.style("left", (d3.event.pageX) + "px")
 						.style("top", (d3.event.pageY -30) + "px");
 				})
@@ -290,7 +306,7 @@
 				.enter().append("g")
 				.attr("class", "legend");
 				
-			var ls_w = 135, ls_h = 20;
+			var ls_w = 135, ls_h = 25;
 				
 			legend.append("rect")
 				.attr("x", function(d, i){ return width - (i*ls_w) - ls_w;})
@@ -300,9 +316,9 @@
 				.style("fill", function(d, i) { return color(d); })
 				.style("opacity", 0.8);
 			
-			var legend_labels = quant.map(function(value) { return value+"+"})
+			var legend_labels = quant.map(function(value) { return "$"+value+"+"})
 			legend.append("text")
-				.attr("x", function(d, i){ return width - (i*ls_w) - ls_w;})
+				.attr("x", function(d, i){ return 5+ width - (i*ls_w) - ls_w;})
 				.attr("y", 590)
 				.text(function(d, i){ return legend_labels[i]; });
 
@@ -347,10 +363,11 @@
 			}
 			forcaseDataLoader()
 			var thisYear = currentYear+".csv"
-				d3.csv(thisYear, function(data) {
-					dataLoad(data)
-					showMap(us, data)
-				})
+			
+			d3.csv(thisYear, function(data) {
+				dataLoad(data)
+				showMap(us, data)
+			})
 			
 			slider.onchange = function() {
 				currentYear = parseInt(this.value);
@@ -362,16 +379,104 @@
 						showMap(us, data)
 					})
 				} else {
-					showMap(us)
+					if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
+						showForecaseMap()
+					} else {
+						showMap(us)
+					}
 				}
 			}
 
 			qslider.onchange = function() {
 				currentQuarter = this.value;
 				svg.selectAll('g').remove();
-				showMap(us)
+				if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
+					console.log("hello")
+					showForecaseMap()
+				} else {
+					showMap(us)
+				}
 			}	
+			function showForecaseMap() {
+				var values = Object.keys(pairQuarterlyWithId[currentYear][currentQuarter]).map(function(key){
+					return parseInt(pairQuarterlyWithId[currentYear][currentQuarter][key])
+				}).sort(function(a,b) { return a - b; })
 
+				color.domain(values)
+				color.range(forecast_color_range)
+				svg.append("g")
+					.attr("class", "county")
+					.selectAll("path")
+					.data(topojson.feature(us, us.objects.counties).features)
+					.enter().append("path")
+					.attr("d", path)
+					.style ( "fill" , function (d) {
+						return color(pairQuarterlyWithId[currentYear][currentQuarter][d.id]);
+					})
+					.style("opacity", 0.8)
+					.on("mouseover", function(d) {
+						var sel = d3.select(this);
+						sel.moveToFront();
+						d3.select(this).transition().duration(300).style({'opacity': 1, 'stroke': 'black', 'stroke-width': 1.5});
+						div.transition().duration(300)
+							.style("opacity", 1)
+						div.html(function() {
+							if (pairNameWithId[d.id] === undefined) {
+								pairNameWithId[d.id] = "Not Available"
+							}
+							if (pairQuarterlyWithId[currentYear][currentQuarter][d.id] === undefined) {
+								pairQuarterlyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							}
+							if (pairWeeklyWithId[currentYear][currentQuarter][d.id] === undefined) {
+								pairWeeklyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							}
+							if (pairEmploymentWithId[currentYear][currentQuarter][d.id] === undefined) {
+								pairEmploymentWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							}
+							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: " + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>"
+						})
+							.style("left", (d3.event.pageX) + "px")
+							.style("top", (d3.event.pageY -30) + "px");
+					})
+					.on("mouseout", function() {
+						var sel = d3.select(this);
+						sel.moveToBack();
+						d3.select(this)
+							.transition().duration(300)
+							.style({'opacity': 0.8, 'stroke': 'white', 'stroke-width': 1});
+						div.transition().duration(300)
+							.style("opacity", 0);
+					})
+				quant = [d3.quantile(values, 0).toFixed(0), d3.quantile(values, 1/7).toFixed(0), d3.quantile(values, 2/7).toFixed(0), d3.quantile(values, 3/7).toFixed(0), d3.quantile(values, 4/7).toFixed(0), d3.quantile(values, 5/7).toFixed(0), d3.quantile(values, 6/7).toFixed(0)]
+				var legend = svg.selectAll("g.legend")
+					.data(quant)
+					.enter().append("g")
+					.attr("class", "legend");
+					
+				var ls_w = 135, ls_h = 25;
+					
+				legend.append("rect")
+					.attr("x", function(d, i){ return width - (i*ls_w) - ls_w;})
+					.attr("y", 550)
+					.attr("width", ls_w)
+					.attr("height", ls_h)
+					.style("fill", function(d, i) { return color(d); })
+					.style("opacity", 0.8);
+				
+				var legend_labels = quant.map(function(value) { return "$"+value+"+"})
+				legend.append("text")
+					.attr("x", function(d, i){ return 5+ width - (i*ls_w) - ls_w;})
+					.attr("y", 590)
+					.text(function(d, i){ return legend_labels[i]; });
+
+				var legend_title = "Total Quarterly Wages";
+				
+				svg.append('g').append("text")
+					.attr("x", 10)
+					.attr("y", 540)
+					.attr("class", "legend_title")
+					.text(function(){return legend_title});	
+			}
 		};
 			
 		
