@@ -164,7 +164,7 @@
 		var width = 960, height = 600;
 		var color_domain = [0, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
 		var ext_color_domain = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
-		var legend_labels = ["< 200", "200+", "400+", "600+", "800+", "1000+", "1200+", "1400+", "1600+", "1800+", "2000+", "2200+", "2400+"]
+		// var legend_labels = ["< 200", "200+", "400+", "600+", "800+", "1000+", "1200+", "1400+", "1600+", "1800+", "2000+", "2200+", "2400+"]
 
 		var pairQuarterlyWithId = {};
 		var pairWeeklyWithId = {};
@@ -173,7 +173,9 @@
 
 		var color = d3.scale.quantile()
 			.domain(color_domain)
-			.range(["#dcdcdc", "#d0d6cd", "#bdc9be", "#aabdaf", "#97b0a0", "#84a491", "#719782", "#5e8b73", "#4b7e64", "#387255", "#256546", "#125937", "#004d28"]);
+			// .range(["#dcdcdc", "#d0d6cd", "#bdc9be", "#aabdaf", "#97b0a0", 
+			// "#84a491", "#719782", "#5e8b73", "#4b7e64", "#387255", "#256546", "#125937", "#004d28"]);
+			.range(["#dcdcdc", "#bdc9be", "#97b0a0", "#719782", "#4b7e64", "#256546", "#004d28"]);
 
 		var div = d3.select("#choropleth").append("div")
 			.attr("class", "tooltip")
@@ -218,21 +220,7 @@
 					pairQuarterlyWithId[2022][2][d.code] = +parseFloat(d['2022 Q2']).toFixed(2)
 					pairQuarterlyWithId[2022][3][d.code] = +parseFloat(d['2022 Q3']).toFixed(2)
 					pairQuarterlyWithId[2022][4][d.code] = +parseFloat(d['2022 Q4']).toFixed(2)
-					// d.id = parseInt(d.code)
-					// d.Year = parseInt(d.Year)
-					// d.Qtr = parseInt(d.Qtr)
-					if (count == 0) {
-						console.log(pairQuarterlyWithId[2021][4][d.code])
-						count+=1
-					}
-					// years.add(d.Year)
-
-					// if (d['Ownership'] == 'Total Covered') {
-					// 	pairQuarterlyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Total Quarterly Wages']).toFixed(2);
-					// 	pairWeeklyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Average Weekly Wage']).toFixed(2);
-					// 	pairEmploymentWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Mean Quarterly Employment']).toFixed(2);
-					// 	pairNameWithId[d.id] = d.Area.split(',')[0];
-					// }	
+					
 				});
 			})
 			years.add(2022)
@@ -256,7 +244,7 @@
 		}
 
 		function showMap(us, data) {
-			console.log(pairQuarterlyWithId[2021][4])
+			// console.log(pairQuarterlyWithId[2021][4])
 			if (!years.has(currentYear)) {
 				d3.csv(currentYear+".csv", function(data) {
 					dataLoad(data)
@@ -264,8 +252,8 @@
 			}
 			var values = Object.keys(pairWeeklyWithId[currentYear][currentQuarter]).map(function(key){
 				return parseInt(pairWeeklyWithId[currentYear][currentQuarter][key])
-			})
-			values.sort(function(a,b) { return a - b; })
+			}).sort(function(a,b) { return a - b; })
+
 			color.domain(values)
 			svg.append("g")
 				.attr("class", "county")
@@ -296,12 +284,13 @@
 					div.transition().duration(300)
 						.style("opacity", 0);
 				})
+			quant = [d3.quantile(values, 0).toFixed(0), d3.quantile(values, 1/7).toFixed(0), d3.quantile(values, 2/7).toFixed(0), d3.quantile(values, 3/7).toFixed(0), d3.quantile(values, 4/7).toFixed(0), d3.quantile(values, 5/7).toFixed(0), d3.quantile(values, 6/7).toFixed(0)]
 			var legend = svg.selectAll("g.legend")
-				.data(ext_color_domain)
+				.data(quant)
 				.enter().append("g")
 				.attr("class", "legend");
 				
-			var ls_w = 73, ls_h = 20;
+			var ls_w = 135, ls_h = 20;
 				
 			legend.append("rect")
 				.attr("x", function(d, i){ return width - (i*ls_w) - ls_w;})
@@ -310,14 +299,15 @@
 				.attr("height", ls_h)
 				.style("fill", function(d, i) { return color(d); })
 				.style("opacity", 0.8);
-				
+			
+			var legend_labels = quant.map(function(value) { return value+"+"})
 			legend.append("text")
 				.attr("x", function(d, i){ return width - (i*ls_w) - ls_w;})
 				.attr("y", 590)
 				.text(function(d, i){ return legend_labels[i]; });
 
 			var legend_title = "Average Weekly Wage";
-
+			
 			svg.append('g').append("text")
 				.attr("x", 10)
 				.attr("y", 540)
