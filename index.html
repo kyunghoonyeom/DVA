@@ -164,7 +164,6 @@
 		var width = 960, height = 600;
 		var color_domain = [0, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
 		var ext_color_domain = [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
-		// var legend_labels = ["< 200", "200+", "400+", "600+", "800+", "1000+", "1200+", "1400+", "1600+", "1800+", "2000+", "2200+", "2400+"]
 		var color_range = ["#dcdcdc", "#bdc9be", "#97b0a0", "#719782", "#4b7e64", "#256546", "#004d28"]
 		var forecast_color_range = ["#e1d1d6", "#d7bac2", "#cea3ad", "#c48c98", "#b97582", "#ad5e6c", "#a14756"]
 		var pairQuarterlyWithId = {};
@@ -210,7 +209,13 @@
 			qslider.oninput = function() {
 				qoutput.innerHTML = this.value;
 			}	
+		var flag = new Set()
 		function forcaseDataLoader() {
+			d3.csv("./flag_counties.csv", function(data){
+				data.forEach(function(d){
+					flag.add(parseInt(d['code']))
+				})
+			})
 			count = 0
 			d3.csv("21q4-22q4_forecasts.csv", function(data) {
 				data.forEach(function(d) {
@@ -243,8 +248,10 @@
 				}
 			});
 		}
+		
 
 		function showMap(us, data) {
+			svg.attr('height', 630)
 			// console.log(pairQuarterlyWithId[2021][4])
 			if (!years.has(currentYear)) {
 				d3.csv(currentYear+".csv", function(data) {
@@ -329,6 +336,23 @@
 				.attr("y", 540)
 				.attr("class", "legend_title")
 				.text(function(){return legend_title});	
+			var flag_legend = svg
+					.append("g")
+					.attr("class", "legend");
+				
+				flag_legend.append("rect")
+					.attr("x", 15)
+					.attr("y", 600)
+					.attr("width", ls_w)
+					.attr("height", ls_h)
+					.style("fill", "#000000")
+					.style("opacity", 0.8);
+				
+				flag_legend.append('text')
+					.attr('x', 160)
+					.attr('y', 617)
+					.text("Data Unavailable")
+
 		}
 
 		var years = new Set()
@@ -391,13 +415,13 @@
 				currentQuarter = this.value;
 				svg.selectAll('g').remove();
 				if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
-					console.log("hello")
 					showForecaseMap()
 				} else {
 					showMap(us)
 				}
 			}	
 			function showForecaseMap() {
+				svg.attr('height', 630)
 				var values = Object.keys(pairQuarterlyWithId[currentYear][currentQuarter]).map(function(key){
 					return parseInt(pairQuarterlyWithId[currentYear][currentQuarter][key])
 				}).sort(function(a,b) { return a - b; })
@@ -411,7 +435,12 @@
 					.enter().append("path")
 					.attr("d", path)
 					.style ( "fill" , function (d) {
-						return color(pairQuarterlyWithId[currentYear][currentQuarter][d.id]);
+						if (!flag.has(d.id)) {
+							return color(pairQuarterlyWithId[currentYear][currentQuarter][d.id]);
+
+						} else {
+							return ("#66FFB2")
+						}
 					})
 					.style("opacity", 0.8)
 					.on("mouseover", function(d) {
@@ -476,6 +505,35 @@
 					.attr("y", 540)
 					.attr("class", "legend_title")
 					.text(function(){return legend_title});	
+				var flag_legend = svg
+					.append("g")
+					.attr("class", "legend");
+				
+				flag_legend.append("rect")
+					.attr("x", 15)
+					.attr("y", 600)
+					.attr("width", ls_w)
+					.attr("height", ls_h)
+					.style("fill", "#000000")
+					.style("opacity", 0.8);
+				
+				flag_legend.append('text')
+					.attr('x', 160)
+					.attr('y', 617)
+					.text("Data Unavailable")
+
+				flag_legend.append("rect")
+					.attr("x", 290)
+					.attr("y", 600)
+					.attr("width", ls_w)
+					.attr("height", ls_h)
+					.style("fill", "#66FFB2")
+					.style("opacity", 0.8);
+				
+				flag_legend.append('text')
+					.attr('x', 435)
+					.attr('y', 617)
+					.text("MAPE > 20%")
 			}
 		};
 			
