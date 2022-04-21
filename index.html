@@ -210,6 +210,7 @@
 				qoutput.innerHTML = this.value;
 			}	
 		var flag = new Set()
+		var flag_color = "#41EBBB"
 		function forcaseDataLoader() {
 			d3.csv("./flag_counties.csv", function(data){
 				data.forEach(function(d){
@@ -439,7 +440,7 @@
 							return color(pairQuarterlyWithId[currentYear][currentQuarter][d.id]);
 
 						} else {
-							return ("#66FFB2")
+							return (flag_color)
 						}
 					})
 					.style("opacity", 0.8)
@@ -527,7 +528,7 @@
 					.attr("y", 600)
 					.attr("width", ls_w)
 					.attr("height", ls_h)
-					.style("fill", "#66FFB2")
+					.style("fill", flag_color)
 					.style("opacity", 0.8);
 				
 				flag_legend.append('text')
