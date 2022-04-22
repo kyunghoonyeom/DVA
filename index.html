@@ -50,7 +50,7 @@
 	p {
 		font-family: 'Proxima Nova', sans-serif;
 		font-size: 15px;
-		margin: 20px 0 0 10px;
+		margin: 5px 0 0 10px;
 	}
 
 	@media (max-width: 400px) {
@@ -62,6 +62,10 @@
 		width: 100%;
 		margin-bottom: 20px;
 
+	}
+
+	h1 {
+		margin-bottom: 15px;
 	}
 
 	.slider {
@@ -87,7 +91,7 @@
 		width: 25px;
 		height: 25px;
 		border-radius: 50%;
-		background: #04AA6D;
+		background: #1e9167;
 		cursor: pointer;
 	}
 
@@ -114,50 +118,88 @@
 		background: #D3D3D3;
 		height: 10px;
 		line-height: 40px;
-		margin: 0 0 20px 0;
+		margin: 0 0 5px 0;
 	}
+
+	.sector-select {
+		display: flex;
+		position: relative;
+		margin-bottom: 20px;
+	}
+	.yearSlider {
+		margin-left: 10px;
+		margin-bottom: 20px;
+	}
+	.qtrSlider {
+		margin-left: 10px;
+		margin-top: 30px;	}
 
 </style>
 
 <body>
 	<h1>U.S. Wage Choropleth</h1>
-	<div class="slidecontainer" style="width: 960px;">
-		<p style="font-weight: bold;">Year: <span id="yearValue"></span></p>
-		<input type="range" min="2000" max="2022" value="2021" class="slider" id="yearSelect"></select>
-		<div class="sliderticks">
-			<p>2000</p>
-			<p>2001</p>
-			<p>2002</p>
-			<p>2003</p>
-			<p>2004</p>
-			<p>2005</p>
-			<p>2006</p>
-			<p>2007</p>
-			<p>2008</p>
-			<p>2009</p>
-			<p>2010</p>
-			<p>2011</p>
-			<p>2012</p>
-			<p>2013</p>
-			<p>2014</p>
-			<p>2015</p>
-			<p>2016</p>
-			<p>2017</p>
-			<p>2018</p>
-			<p>2019</p>
-			<p>2020</p>
-			<p>2021</p>
-			<p>2022</p>
-		</div>
-		<p style="font-weight: bold;">Quarter: <span id="quarterValue"></span></p>
-		<input type="range" min="1" max="4" value="1" class="slider" id="quarterSelect"></select>
-		<div class="sliderticks">
-			<p>1</p>
-			<p>2</p>
-			<p>3</p>
-			<p>4</p>
-		</div>
+	<div class="sector-select" style="width: 960px;">
+		<label for="sectors" style="padding-right: 5px;">Choose a sector:  </label>
+		<select name="sectors" id="sectors">
+			<option value="0">Total Covered</option>
+			<option value="1">Goods-producing</option>
+			<option value="2">Natural resources and mining</option>
+			<option value="3">Construction</option>
+			<option value="4">Manufacturing</option>
+			<option value="5">Service-providing</option>
+			<option value="6">Information</option>
+			<option value="7">Trade, transportation, and utilities</option>
+			<option value="8">Financial activities</option>
+			<option value="9">Professional and business services</option>
+			<option value="10">Education and health services</option>
+			<option value="11">Leisure and hospitality</option>
+			<option value="12">Other services</option>
+
+		</select>
 	</div>
+	<div class="slidecontainer" style="width: 960px;">
+		<div class="yearSlider">
+			<p style="font-weight: bold;">Year: <span id="yearValue"></span></p>
+			<input type="range" min="2000" max="2022" value="2021" class="slider" id="yearSelect"></select>
+			<div class="sliderticks">
+				<p>2000</p>
+				<p>2001</p>
+				<p>2002</p>
+				<p>2003</p>
+				<p>2004</p>
+				<p>2005</p>
+				<p>2006</p>
+				<p>2007</p>
+				<p>2008</p>
+				<p>2009</p>
+				<p>2010</p>
+				<p>2011</p>
+				<p>2012</p>
+				<p>2013</p>
+				<p>2014</p>
+				<p>2015</p>
+				<p>2016</p>
+				<p>2017</p>
+				<p>2018</p>
+				<p>2019</p>
+				<p>2020</p>
+				<p>2021</p>
+				<p>2022</p>
+			</div>
+		</div>
+		<div class="qtrSlider">
+			<p style="font-weight: bold;">Quarter: <span id="quarterValue"></span></p>
+			<input type="range" min="1" max="4" value="1" class="slider" id="quarterSelect"></select>
+			<div class="sliderticks">
+				<p>1</p>
+				<p>2</p>
+				<p>3</p>
+				<p>4</p>
+			</div>
+		</div>
+		
+	</div>
+
 	<div id="choropleth"></div>
 	<script type="text/javascript">
 		
@@ -189,12 +231,16 @@
 			
 		var q = queue()
 			q.defer(d3.json, "us.json")
-				.defer(d3.csv, "2021.csv")
+				.defer(d3.csv, "./data/2021.csv")
 				.await(ready);
-			var currentYear = 2021
-			var currentQuarter = 1
+			var currentYear = document.getElementById("yearSelect").value;
+			var currentQuarter = document.getElementById("quarterSelect").value;
+			var currentSector = document.getElementById("sectors").value;
+
 			var slider = document.getElementById("yearSelect");
 			var output = document.getElementById("yearValue");
+			var selector = document.getElementById("sectors");
+
 			output.innerHTML = slider.value;
 
 			slider.oninput = function() {
@@ -208,31 +254,45 @@
 
 			qslider.oninput = function() {
 				qoutput.innerHTML = this.value;
-			}	
+			}
+
+			
 		var flag = new Set()
 		var flag_color = "#41EBBB"
-		function forcaseDataLoader() {
-			d3.csv("./flag_counties.csv", function(data){
+
+		function loader(path, i) {
+			d3.csv(path, function(data) {
+				data.forEach(function(d) {
+					d.code = parseInt(d.code)
+
+					pairQuarterlyWithId[2021][4][i][d.code] = +parseFloat(d['2021 Q4']).toFixed(2)
+					pairQuarterlyWithId[2022][1][i][d.code] = +parseFloat(d['2022 Q1']).toFixed(2)
+					pairQuarterlyWithId[2022][2][i][d.code] = +parseFloat(d['2022 Q2']).toFixed(2)
+					pairQuarterlyWithId[2022][3][i][d.code] = +parseFloat(d['2022 Q3']).toFixed(2)
+					pairQuarterlyWithId[2022][4][i][d.code] = +parseFloat(d['2022 Q4']).toFixed(2)
+					
+				});
+			})
+		}
+		function forcaseDataLoader(err, data, data2, data3, data4) {
+			d3.csv("./data/flag_counties.csv", function(data){
 				data.forEach(function(d){
 					flag.add(parseInt(d['code']))
 				})
 			})
-			count = 0
-			d3.csv("21q4-22q4_forecasts.csv", function(data) {
-				data.forEach(function(d) {
-					d.code = parseInt(d.code)
-					
-					pairQuarterlyWithId[2021][4][d.code] = +parseFloat(d['2021 Q4']).toFixed(2)
-					pairQuarterlyWithId[2022][1][d.code] = +parseFloat(d['2022 Q1']).toFixed(2)
-					pairQuarterlyWithId[2022][2][d.code] = +parseFloat(d['2022 Q2']).toFixed(2)
-					pairQuarterlyWithId[2022][3][d.code] = +parseFloat(d['2022 Q3']).toFixed(2)
-					pairQuarterlyWithId[2022][4][d.code] = +parseFloat(d['2022 Q4']).toFixed(2)
-					
-				});
-			})
+
+			for (var i = 0; i < 13; i++) {
+				loader("./data/"+i+" 21q4-22q4_forecasts.csv", i)
+			}
 			years.add(2022)
 		}
-		
+		function tooltipForm(input) {
+				if (typeof input === 'string' || input instanceof String) {
+					return input
+				} else {
+					return "$" + parseInt(input).toLocaleString()
+				}
+			}
 		function dataLoad(data) {
 			data.forEach(function(d) {
 				d.id = parseInt(d.id)
@@ -240,27 +300,63 @@
 				d.Qtr = parseInt(d.Qtr)
 				
 				years.add(d.Year)
-
 				if (d['Ownership'] == 'Total Covered') {
-					pairQuarterlyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Total Quarterly Wages']).toFixed(2);
-					pairWeeklyWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Average Weekly Wage']).toFixed(2);
-					pairEmploymentWithId[d.Year][d.Qtr][d.id] = +parseFloat(d['Mean Quarterly Employment']).toFixed(2);
 					pairNameWithId[d.id] = d.Area.split(',')[0];
+					assignValues(d.Year, d.Qtr, 0, d.id, d);
+				}
+				if (d['Industry'].includes('Goods-producing')) {
+					assignValues(d.Year, d.Qtr, 1, d.id, d);
+				}
+				if (d['Industry'].includes('Natural resources and mining')) {
+					assignValues(d.Year, d.Qtr, 2, d.id, d);
+				}
+				if (d['Industry'].includes('Construction')) {
+					assignValues(d.Year, d.Qtr, 3, d.id, d);
+				}
+				if (d['Industry'].includes('Manufacturing')) {
+					assignValues(d.Year, d.Qtr, 4, d.id, d);
+				}
+				if (d['Industry'].includes('Service-providing')) {
+					assignValues(d.Year, d.Qtr, 5, d.id, d);
+				}
+				if (d['Industry'].includes('Trade, transportation, and utilities')) {
+					assignValues(d.Year, d.Qtr, 6, d.id, d);
+				}
+				if (d['Industry'].includes('Information')) {
+					assignValues(d.Year, d.Qtr, 7, d.id, d);
+				}
+				if (d['Industry'].includes('Financial activities')) {
+					assignValues(d.Year, d.Qtr, 8, d.id, d);
+				}
+				if (d['Industry'].includes('Professional and business services')) {
+					assignValues(d.Year, d.Qtr, 9, d.id, d);
+				}
+				if (d['Industry'].includes('Education and health services')) {
+					assignValues(d.Year, d.Qtr, 10, d.id, d);
+				}
+				if (d['Industry'].includes('Leisure and hospitality')) {
+					assignValues(d.Year, d.Qtr, 11, d.id, d);
+				}
+				if (d['Industry'].includes('Other services')) {
+					assignValues(d.Year, d.Qtr, 12, d.id, d);
 				}
 			});
 		}
-		
+		function assignValues(year, qtr, i, id, d) {
+			pairQuarterlyWithId[year][qtr][i][id] = +parseFloat(d['Total Quarterly Wages']).toFixed(2);
+			pairWeeklyWithId[year][qtr][i][id] = +parseFloat(d['Average Weekly Wage']).toFixed(2);
+			pairEmploymentWithId[year][qtr][i][id] = +parseFloat(d['Mean Quarterly Employment']).toFixed(2);
+		}
 
 		function showMap(us, data) {
 			svg.attr('height', 630)
-			// console.log(pairQuarterlyWithId[2021][4])
 			if (!years.has(currentYear)) {
-				d3.csv(currentYear+".csv", function(data) {
+				d3.csv("./data/"+currentYear+".csv", function(data) {
 					dataLoad(data)
 				})
 			}
-			var values = Object.keys(pairWeeklyWithId[currentYear][currentQuarter]).map(function(key){
-				return parseInt(pairWeeklyWithId[currentYear][currentQuarter][key])
+			var values = Object.keys(pairWeeklyWithId[currentYear][currentQuarter][currentSector]).map(function(key){
+				return parseInt(pairWeeklyWithId[currentYear][currentQuarter][currentSector][key])
 			}).sort(function(a,b) { return a - b; })
 
 			color.domain(values)
@@ -272,7 +368,7 @@
 				.enter().append("path")
 				.attr("d", path)
 				.style ( "fill" , function (d) {
-					return color(pairWeeklyWithId[currentYear][currentQuarter][d.id]);
+					return color(pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id]);
 				})
 				.style("opacity", 0.8)
 				.on("mouseover", function(d) {
@@ -285,19 +381,20 @@
 						if (pairNameWithId[d.id] === undefined) {
 							pairNameWithId[d.id] = "Not Available"
 						}
-						if (pairQuarterlyWithId[currentYear][currentQuarter][d.id] === undefined) {
-							pairQuarterlyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						if (pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+							pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 						}
-						if (pairWeeklyWithId[currentYear][currentQuarter][d.id] === undefined) {
-							pairWeeklyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						if (pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+							pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 						}
-						if (pairEmploymentWithId[currentYear][currentQuarter][d.id] === undefined) {
-							pairEmploymentWithId[currentYear][currentQuarter][d.id] = "Not Available"
+						if (pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+							pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 						}
-						return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: " + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>"
+							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + tooltipForm(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Average Weekly Wage: " + tooltipForm(pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Mean Quarterly Employment: " + tooltipForm(pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>"
 					})
 						.style("left", (d3.event.pageX) + "px")
-						.style("top", (d3.event.pageY -30) + "px");
+						.style("top", (d3.event.pageY -30) + "px")
+						.style("height", "60px");
 				})
 				.on("mouseout", function() {
 					var sel = d3.select(this);
@@ -324,7 +421,7 @@
 				.style("fill", function(d, i) { return color(d); })
 				.style("opacity", 0.8);
 			
-			var legend_labels = quant.map(function(value) { return "$"+value+"+"})
+			var legend_labels = quant.map(function(value) { return "$"+parseInt(value).toLocaleString()+"+"})
 			legend.append("text")
 				.attr("x", function(d, i){ return 5+ width - (i*ls_w) - ls_w;})
 				.attr("y", 590)
@@ -384,10 +481,15 @@
 					pairQuarterlyWithId[i][j] = {}
 					pairWeeklyWithId[i][j] = {}
 					pairEmploymentWithId[i][j] = {}
+					for (var k = 0; k < 13; k++) {
+						pairQuarterlyWithId[i][j][k] = {}
+						pairWeeklyWithId[i][j][k] = {}
+						pairEmploymentWithId[i][j][k] = {}
+					}
 				}
 			}
 			forcaseDataLoader()
-			var thisYear = currentYear+".csv"
+			var thisYear = "./data/"+currentYear+".csv"
 			
 			d3.csv(thisYear, function(data) {
 				dataLoad(data)
@@ -399,13 +501,13 @@
 				svg.selectAll('g').remove();
 				
 				if (!years.has(currentYear)) {
-					d3.csv(currentYear+".csv", function(data){
+					d3.csv("./data/"+currentYear+".csv", function(data){
 						dataLoad(data)
 						showMap(us, data)
 					})
 				} else {
 					if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
-						showForecaseMap()
+						showForecastMap()
 					} else {
 						showMap(us)
 					}
@@ -416,15 +518,25 @@
 				currentQuarter = this.value;
 				svg.selectAll('g').remove();
 				if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
-					showForecaseMap()
+					showForecastMap()
 				} else {
 					showMap(us)
 				}
-			}	
-			function showForecaseMap() {
+			}
+			selector.onchange = function() {
+				currentSector = this.value;
+				svg.selectAll('g').remove();
+				if (currentYear == 2021 && currentQuarter == 4 || currentYear == 2022) {
+					showForecastMap()
+				} else {
+					showMap(us)
+				}
+			}
+
+			function showForecastMap() {
 				svg.attr('height', 630)
-				var values = Object.keys(pairQuarterlyWithId[currentYear][currentQuarter]).map(function(key){
-					return parseInt(pairQuarterlyWithId[currentYear][currentQuarter][key])
+				var values = Object.keys(pairQuarterlyWithId[currentYear][currentQuarter][currentSector]).map(function(key){
+					return parseInt(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][key])
 				}).sort(function(a,b) { return a - b; })
 
 				color.domain(values)
@@ -437,7 +549,7 @@
 					.attr("d", path)
 					.style ( "fill" , function (d) {
 						if (!flag.has(d.id)) {
-							return color(pairQuarterlyWithId[currentYear][currentQuarter][d.id]);
+							return color(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id]);
 
 						} else {
 							return (flag_color)
@@ -454,19 +566,20 @@
 							if (pairNameWithId[d.id] === undefined) {
 								pairNameWithId[d.id] = "Not Available"
 							}
-							if (pairQuarterlyWithId[currentYear][currentQuarter][d.id] === undefined) {
-								pairQuarterlyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							if (pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+								pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 							}
-							if (pairWeeklyWithId[currentYear][currentQuarter][d.id] === undefined) {
-								pairWeeklyWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							if (pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+								pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 							}
-							if (pairEmploymentWithId[currentYear][currentQuarter][d.id] === undefined) {
-								pairEmploymentWithId[currentYear][currentQuarter][d.id] = "Not Available"
+							if (pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
+								pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 							}
-							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + pairQuarterlyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Average Weekly Wage: " + pairWeeklyWithId[currentYear][currentQuarter][d.id] + "<br>" + "Mean Quarterly Employment: " + pairEmploymentWithId[currentYear][currentQuarter][d.id] + "<br>"
+							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + tooltipForm(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id])
 						})
-							.style("left", (d3.event.pageX) + "px")
-							.style("top", (d3.event.pageY -30) + "px");
+						.style("left", (d3.event.pageX) + "px")
+						.style("top", (d3.event.pageY -30) + "px")
+						.style("height", "30px");
 					})
 					.on("mouseout", function() {
 						var sel = d3.select(this);
@@ -493,7 +606,7 @@
 					.style("fill", function(d, i) { return color(d); })
 					.style("opacity", 0.8);
 				
-				var legend_labels = quant.map(function(value) { return "$"+value+"+"})
+				var legend_labels = quant.map(function(value) { return "$"+parseInt(value).toLocaleString()+"+"})
 				legend.append("text")
 					.attr("x", function(d, i){ return 5+ width - (i*ls_w) - ls_w;})
 					.attr("y", 590)
