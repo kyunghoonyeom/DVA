@@ -390,7 +390,7 @@
 						if (pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] === undefined) {
 							pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id] = "Not Available"
 						}
-							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + tooltipForm(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Average Weekly Wage: " + tooltipForm(pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Mean Quarterly Employment: " + tooltipForm(pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>"
+							return pairNameWithId[d.id] + "<br>" + " Total Quarterly Wages: " + tooltipForm(pairQuarterlyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Average Weekly Wage: " + tooltipForm(pairWeeklyWithId[currentYear][currentQuarter][currentSector][d.id]) + "<br>" + "Mean Quarterly Employment: " + parseInt(pairEmploymentWithId[currentYear][currentQuarter][currentSector][d.id]).toLocaleString() + "<br>"
 					})
 						.style("left", (d3.event.pageX) + "px")
 						.style("top", (d3.event.pageY -30) + "px")
